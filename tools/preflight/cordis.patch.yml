@@ -1,0 +1,3 @@
+- insert:
+    - id: independent-review-preflight
+      name: '@local/dsh-review-preflight'

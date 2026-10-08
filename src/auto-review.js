@@ -2,6 +2,8 @@ import { BlockAssembler } from "@deepseek-ai/dsh-llm";
 import { deepFreeze } from "@deepseek-ai/dsh-util-values";
 import { AUTO_PRESET } from "@deepseek-ai/dsh-permission-presets";
 import { RUN_CODE_NAME } from "@deepseek-ai/dsh-tools";
+import { setApprovalPolicy } from "@deepseek-ai/dsh-user-approval";
+import { Config, resolveReviewer, requestDecision } from "./reviewer.js";
 //#region lib/types/index.js
 /**
 * LLM-backed authorization gate for the current-session-only Auto permission
@@ -40,7 +42,7 @@ Judge the pending action by what its tool and arguments will actually do. The ex
 
 For any allow, end with exactly the applicable two-member object and nothing else. In particular, when a medium action is allowed, the complete text must be exactly {"risk":"medium","decision":"allow"}. Do not add reason, explanation, labels, Markdown, or surrounding prose. Stop immediately after the closing brace.`;
 /** Cordis plugin name used by loader diagnostics. */
-const name = "experimental-auto-review";
+const name = "independent-auto-review";
 /** Complete host services required before Auto may be advertised. */
 const inject = [
 	"approval",
@@ -395,24 +397,10 @@ async function readDecision(stream) {
 	if (final?.type !== "text" || blocks.slice(0, -1).some((block) => block.type !== "reasoning")) throw new Error("auto-review: reviewer must emit zero or more reasoning blocks followed by exactly one text block");
 	return parseDecision(final.text);
 }
-/** Review one frozen pending action with the fixed policy and current LLM route. */
-async function classifyRisk(ctx, agent, exec, signal) {
+/** Review one frozen action with the configured review route. */
+async function classifyRisk(ctx, agent, exec, signal, reviewer) {
 	const snapshot = snapshotAutoReview(agent, exec);
-	const options = deepFreeze({
-		provider: snapshot.provider,
-		model: snapshot.model,
-		system: REVIEW_POLICY,
-		messages: [{
-			role: "user",
-			content: [{
-				type: "text",
-				text: reviewUserText(snapshot)
-			}]
-		}],
-		temperature: 0,
-		signal
-	});
-	return readDecision(ctx.llm.stream(options));
+	return requestDecision(ctx.llm, reviewer, signal, REVIEW_POLICY, reviewUserText(snapshot), readDecision);
 }
 /** Materialize the fixed model-facing final Auto denial plus optional UI detail. */
 function denied(exec, reason) {
@@ -453,8 +441,13 @@ function failed(exec, error) {
 	};
 }
 /** Install the Auto preset and its prepended per-call review gate. */
-function apply(ctx) {
+function apply(ctx, config) {
+	const reviewer = resolveReviewer(config?.reviewer);
 	const permissionPresets = ctx.permissionPresets;
+	const removalPreset = permissionPresets.resolve("workspace-write");
+	if (removalPreset.sandbox !== "workspace-write" || removalPreset.approval !== "ask") {
+		throw new Error("independent-auto-review: workspace-write must use a confined sandbox and manual approval");
+	}
 	let accepting = true;
 	const active = /* @__PURE__ */ new Set();
 	const lifecycle = new AbortController();
@@ -467,19 +460,19 @@ function apply(ctx) {
 			const completed = Promise.withResolvers();
 			active.add(completed.promise);
 			try {
-				const review = await classifyRisk(ctx, agent, exec, AbortSignal.any([exec.signal, lifecycle.signal])).then((decision) => ({
+				const review = await classifyRisk(ctx, agent, exec, AbortSignal.any([exec.signal, lifecycle.signal]), reviewer).then((decision) => ({
 					ok: true,
 					decision
 				}), (error) => ({
 					ok: false,
 					error
 				}));
-				if (isAborted(lifecycle.signal)) return { kind: "cancel" };
+				if (isAborted(lifecycle.signal) || isAborted(exec.signal)) return { kind: "cancel" };
 				if (!review.ok) return failed(exec, review.error);
 				const { decision } = review;
 				if (decision.decision === "deny" && ctx.approval.overrideOf(agent.session) === "never") return denied(exec, decision.reason);
 				const downstream = await next();
-				if (isAborted(lifecycle.signal)) return { kind: "cancel" };
+				if (isAborted(lifecycle.signal) || isAborted(exec.signal)) return { kind: "cancel" };
 				if (decision.decision === "allow" || downstream.kind !== "allow") return downstream;
 				return askUser(exec, decision.reason);
 			} finally {
@@ -489,13 +482,18 @@ function apply(ctx) {
 		}, { prepend: true });
 		yield permissionPresets.registerAuto(() => {
 			if (!accepting) throw new Error("auto-review: integration is closing");
+			if (!ctx.llm.listProviders().some((provider) => provider.id === reviewer.provider)) {
+				throw new Error("independent-auto-review: the configured review provider is not available");
+			}
 		});
 		yield async () => {
 			accepting = false;
 			try {
 				for (const session of ctx.sessions.list()) {
 					if (permissionPresets.current(session) !== AUTO_PRESET) continue;
-					permissionPresets.set(session, "danger-full-access");
+					const policy = ctx.approval.overrideOf(session);
+					permissionPresets.set(session, "workspace-write");
+					if (policy === "never") setApprovalPolicy(session, "never");
 				}
 			} finally {
 				lifecycle.abort(/* @__PURE__ */ new Error("auto-review integration disposed"));
@@ -505,4 +503,6 @@ function apply(ctx) {
 	}, "auto-review lifecycle");
 }
 //#endregion
-export { apply, inject, name };
+export { apply, inject, name, Config };
+// Expose pure functions for independent tests. These exports do not register host effects.
+export const testing = Object.freeze({ REVIEW_POLICY, parseDecision, readDecision, snapshotAutoReview, reviewUserText, classifyRisk, filteredUserEntries, textRole });
