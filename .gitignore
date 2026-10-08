@@ -1,0 +1,8 @@
+node_modules/
+coverage/
+.env
+.env.*
+.credentials.yaml
+*.tgz
+*.log
+reports/local-*
