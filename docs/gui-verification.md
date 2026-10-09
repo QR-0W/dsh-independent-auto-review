@@ -1,16 +1,16 @@
 # GUI verification
 
-This is a verification snapshot for DSH `0.2.0-rc.2` and Node 24. The root package is `0.1.2`. The GUI companion is `@local/dsh-independent-auto-review-settings` `0.1.0`.
+This is a verification snapshot for DSH `0.2.0-rc.2` and Node 24. The root package is `0.1.3`. The GUI companion is `@local/dsh-independent-auto-review-settings` `0.1.1`.
 
 ## Results
 
 | Check | Result | What it establishes |
 | --- | --- | --- |
-| Automated suite | 96 tests passed | Includes all 57 prior safety tests and 39 GUI tests. |
+| Automated suite | 98 tests passed | Includes all 57 prior safety tests and 41 GUI tests. |
 | Real Host RPC boundary | 16 tests passed | Shipped Cordis Context, TypertRegistry, Gateway, and ToolRuntime dispatch and strict validation; isolated persistence seam. |
 | Live Host settings read | Passed | The installed management tool can read the independent reviewer. |
 | Live Host same-values save | Passed | The shared Host configuration operation accepted the revision-fenced write. |
-| Client slot registration | Active | The connected Client registered the configuration form. |
+| Client bundle-page registration | Active for both own bundle keys | The connected Client registered `plugins.bundle.config` for the reviewer and settings companion. The internal row entry remains available. |
 | Browser appearance | Not verified | No visual result is claimed. |
 | Browser click and save flow | Not verified | Host tool tests do not prove browser interaction. |
 | Model gateway requests for this GUI snapshot | Not run | Host RPC tests are not model requests. Saving settings does not establish model connectivity, identity, or review decisions. |
@@ -26,6 +26,12 @@ reviewer:
 ```
 
 The save used the same values. It did not change the main model. It did not select Auto or test the gateway.
+
+## Bundle-card entry correction
+
+The user reported that both installed cards opened pages with no settings in `v0.1.2`. The form had registered only `plugins.row.config`. The actual card click opens the bundle page, whose form is selected from `plugins.bundle.config`. The fix registers the same shared form under both own bundle package names and retains the internal row entry.
+
+The settings companion was reloaded without reloading the review gate. Both bundle registrations are active in the connected Client. The saved reviewer route is unchanged. A user-confirmed display and read of the form is still required; registration alone is not a visual result.
 
 ## Configuration behavior
 

@@ -166,9 +166,11 @@ return {
     ctx.effect(() => unmount);
     ctx.effect(() => ctx.locale.register('independentAutoReview', 'en', dictionaries.en));
     ctx.effect(() => ctx.locale.register('independentAutoReview', 'zh', dictionaries.zh));
-    ctx.slots.inject('plugins.row.config', () => ctx.slots.register({
-      name: 'plugins.row.config', key: '@local/dsh-independent-auto-review#independent-auto-review', locale: 'independentAutoReview',
-    }, props => props.view === 'summary' ? h('span', null, props.t('summary')) :
-      h(React.Fragment, null, h('style', null, css), h(HostReviewForm, { api: ctx.remote.independentAutoReviewSettings, t: props.t }))));
+    for (const entry of reviewConfigEntries()) {
+      ctx.slots.inject(entry.name, () => ctx.slots.register({
+        ...entry, locale: 'independentAutoReview',
+      }, props => props.view === 'summary' ? h('span', null, props.t('summary')) :
+        h(React.Fragment, null, h('style', null, css), h(HostReviewForm, { api: ctx.remote.independentAutoReviewSettings, t: props.t }))));
+    }
   },
 };

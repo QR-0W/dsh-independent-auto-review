@@ -34,3 +34,12 @@ export async function submitReview(form, draft, revision) {
   if (accepted !== true) throw new Error('refused');
   return true;
 }
+
+/** Card clicks open bundle pages; keep the internal row entry as an alternate route. */
+export function reviewConfigEntries() {
+  return [
+    { name: 'plugins.bundle.config', key: '@local/dsh-independent-auto-review' },
+    { name: 'plugins.bundle.config', key: '@local/dsh-independent-auto-review-settings' },
+    { name: 'plugins.row.config', key: '@local/dsh-independent-auto-review#independent-auto-review' },
+  ];
+}

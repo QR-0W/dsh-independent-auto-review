@@ -6,7 +6,7 @@ This companion targets DSH `0.2.0-rc.2` and Node 24. It does not replace the mai
 
 ## Install
 
-Use a source checkout of [QR-0W/dsh-independent-auto-review](https://github.com/QR-0W/dsh-independent-auto-review) at tag `v0.1.2` or a reviewed later commit. This release contains root `0.1.2` and companion `0.1.0`. The older `v0.1.0` and `v0.1.1` tags do not contain this companion.
+Use a source checkout of [QR-0W/dsh-independent-auto-review](https://github.com/QR-0W/dsh-independent-auto-review) at tag `v0.1.3` or a reviewed later commit. This release contains root `0.1.3` and companion `0.1.1`, with forms on both installed bundle-card pages. The older `v0.1.0` and `v0.1.1` tags do not contain this companion.
 
 1. Register a DSH adapter for the review provider and model.
 2. Run `npm run link:runtime` from the repository root. It links the exact tested API packages shipped with DSH. It does not install another runtime.
@@ -21,7 +21,7 @@ Do not hand-edit the profile's package manifest or patch. Use Plugin Manager for
 
 ## Configure
 
-Open **Plugins → Installed → Independent Auto Review**. Select **Configure** on its review component row.
+Open **Plugins → Installed**. Select **Independent Auto Review** or **Auto Review Settings** to reach the same reviewer form directly. The review row's Configure control remains an alternate entry.
 
 Enter the exact provider and model identifiers, reasoning effort, and timeout. Only an explicit save writes settings. The form retains the draft after a failure and rejects a stale revision instead of overwriting a concurrent edit.
 
@@ -64,7 +64,7 @@ The separate build-tools directory supplies the development compiler. Commit the
 
 ## Verification and safety
 
-The current suite passed 96 tests, including 16 real Registry, Gateway, and ToolRuntime RPC tests. A live Host settings read and same-values save passed without changing the reviewer route. Client slot registration is active. Browser appearance and clicks remain unverified. Actual gateway tests are separate from settings writes; no gateway result is claimed by these checks.
+The current suite passed 98 tests, including 16 real Registry, Gateway, and ToolRuntime RPC tests. A live Host settings read and same-values save passed without changing the reviewer route. Client slot registration is active. Browser appearance and clicks remain unverified. Actual gateway tests are separate from settings writes; no gateway result is claimed by these checks.
 
 See [GUI verification](../../docs/gui-verification.md) for the exact snapshot and limits, and the [project README](../../README.md) for gate behavior and setup.
 

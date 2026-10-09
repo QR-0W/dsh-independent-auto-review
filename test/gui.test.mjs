@@ -1,6 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { reviewMutation, reviewDraft, submitReview } from '../tools/gui/domain.js';
+import { reviewMutation, reviewDraft, submitReview, reviewConfigEntries } from '../tools/gui/domain.js';
+
+test('GUI form belongs to both installed bundle card pages', () => {
+  assert.deepEqual(reviewConfigEntries().filter(entry => entry.name === 'plugins.bundle.config'), [
+    { name: 'plugins.bundle.config', key: '@local/dsh-independent-auto-review' },
+    { name: 'plugins.bundle.config', key: '@local/dsh-independent-auto-review-settings' },
+  ]);
+});
+
+test('GUI keeps the internal review-row configuration route without duplicate entries', () => {
+  const entries = reviewConfigEntries();
+  assert.equal(entries.length, 3);
+  assert.equal(new Set(entries.map(entry => `${entry.name}:${entry.key}`)).size, entries.length);
+  assert.deepEqual(entries.find(entry => entry.name === 'plugins.row.config'), {
+    name: 'plugins.row.config', key: '@local/dsh-independent-auto-review#independent-auto-review',
+  });
+});
 
 const draft = { provider: 'gptpro', model: 'codex-auto-review', reasoningEffort: 'medium', timeoutMs: '60000' };
 const state = { status: 'ready', mode: 'host', writable: true, revision: 3, value: { reviewer: { ...draft, timeoutMs: 60000 } } };

@@ -8,7 +8,7 @@ This project targets DSH `0.2.0-rc.2` and Node 24. It replaces the built-in expe
 
 Public source repository: [QR-0W/dsh-independent-auto-review](https://github.com/QR-0W/dsh-independent-auto-review).
 
-Release `v0.1.2` includes the root package `0.1.2` and settings companion `0.1.0`. Use this tag or a reviewed later commit for the GUI workflow. The older tags `v0.1.0` and `v0.1.1` do not contain the companion.
+Release `v0.1.3` includes root `0.1.3` and settings companion `0.1.1`. It adds the form directly to both installed bundle-card pages. Use this tag or a reviewed later commit. Version `v0.1.2` registered only the internal review-row form; the older `v0.1.0` and `v0.1.1` tags have no GUI companion.
 
 Use a source checkout for the complete installation workflow. The root runtime package does not contain or activate the GUI companion. The GUI ships a prebuilt browser artifact. No install-time build script is needed.
 
@@ -26,7 +26,7 @@ The project contains two persistent bundles:
 5. Install the source checkout's absolute directory through the DSH Plugin Manager.
 6. Install the absolute `tools/gui` directory through the same manager.
 7. Confirm the installation outcomes. Refresh the existing GUI when needed to load the new client artifact.
-8. Open **Plugins → Installed → Independent Auto Review**. Select **Configure** on its review component row.
+8. Open **Plugins → Installed** and select **Independent Auto Review** or **Auto Review Settings**. Both bundle pages provide the same reviewer form. The review row's Configure control remains an alternate entry.
 9. Save the review provider, model, reasoning effort, and timeout. Select **Auto** in the permission menu when ready.
 
 Do not hand-edit the profile's package manifest or patch. Package and profile changes use the plugin manager. Configuration writes use the public Host configuration service.
@@ -93,7 +93,7 @@ npm run check
 
 Tests use the installed runtime. Set `DSH_RUNTIME_DIR` when DSH is not in the global npm directory. Shared APIs are declared in peer and development dependencies. The linking helper supplies the exact shipped APIs; it does not install another runtime. The compiler dependencies stay in the separate build-tools directory.
 
-The current suite passed 96 tests, including 16 real Registry, Gateway, and ToolRuntime RPC tests. The live Host settings read and a same-values save passed. Client slot registration is active. Browser appearance and clicks remain unverified. Saving settings is not a real-gateway test. See [GUI verification](docs/gui-verification.md) for this snapshot and limits, and [earlier gate verification](docs/verification.md) for the prior review-gate checks.
+The current suite passed 98 tests, including 16 real Registry, Gateway, and ToolRuntime RPC tests. The live Host settings read and a same-values save passed. Client slot registration is active. Browser appearance and clicks remain unverified. Saving settings is not a real-gateway test. See [GUI verification](docs/gui-verification.md) for this snapshot and limits, and [earlier gate verification](docs/verification.md) for the prior review-gate checks.
 
 See the [source notice](NOTICE.md) and the GUI's [third-party notices](tools/gui/THIRD-PARTY-NOTICES.md). Private local reports, dependencies, environment files, and logs are excluded from Git. Ignore rules do not remove files already committed.
 
