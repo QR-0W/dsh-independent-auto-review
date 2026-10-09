@@ -16,9 +16,11 @@ reviewer:
   timeoutMs: 60000
 ```
 
-Change the plugin configuration through the DSH configuration editor. Changes use the normal plugin lifecycle. You can change the provider, model, reasoning level, and timeout.
+Change the plugin configuration through the DSH configuration editor. You can change the provider, model, reasoning level, and timeout.
 
-The selected provider must have a registered DSH adapter. The model must be in that adapter's model list. An explicit reasoning level must be in the model's reasoning declaration.
+A configuration change reloads this plugin. Sessions that used Auto can move to confined `workspace-write`. Select Auto again after the new configuration is active. A main-model selection change does not reload this plugin.
+
+The selected provider must have a registered DSH adapter. The adapter must resolve the selected model. An explicit reasoning level must be supported by that model.
 
 If you omit `reasoningEffort`, the review adapter uses its own default. The plugin never copies the main model's settings. It never falls back to the main model.
 
@@ -45,14 +47,17 @@ A model decision is not a deterministic security boundary. Do not use it as the 
 
 Use the DSH plugin manager. Do not edit the DSH installation or the profile's package manifest.
 
-1. Run `npm run check` in the project.
+1. Run `npm run link:runtime`, then `npm run check` in the project. The link command uses the exact tested API packages shipped with DSH. It does not install another runtime.
 2. Install the temporary setup bundle in `tools/preflight` through `plugin_manager`.
 3. Read `reports/local-preflight.json`. Confirm `status` is `ready` and `autoSessions` is `0`.
 4. If Auto sessions exist, move them to a manual permission mode. Do not replace the old component while they use Auto.
-5. Install this project's directory through `plugin_manager`.
+5. Install this project's absolute directory through `plugin_manager`.
 6. Check the installation result and the live Config entry.
-7. Remove the temporary setup bundle.
-8. Select Auto in a test session when you are ready to use model review.
+7. For a controlled live check, install `tools/verify` through the plugin manager. Read `reports/local-installed.json`. The probe uses isolated scopes. It does not change existing session permissions.
+8. Remove both temporary bundles through the plugin manager.
+9. Select Auto in the permission menu when you are ready to use model review.
+
+The current `web` profile has completed these installation and verification steps. No temporary bundle remains.
 
 Installation does not select Auto for your sessions. It does not change the main model.
 

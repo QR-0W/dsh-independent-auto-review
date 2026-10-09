@@ -1,41 +1,36 @@
 # Verification
 
+## Result
+
+The independent review bundle is installed in the `web` profile. The new review component is active. Its Config schema is available. The built-in review component is disabled by the bundle patch.
+
+The active review route is `gptpro / codex-auto-review / medium`. The timeout is 60000 ms.
+
 ## Automated tests
 
 Run `npm run check` with DSH `0.2.0-rc.2` and Node 24.
 
-Current result: 55 tests passed. No tests failed.
+Current result: 57 tests passed. No tests failed.
 
-The tests cover:
+The tests cover separate route settings, main-route changes, strict decisions, evidence roles, logged action matching, stream completion, cancellation, timeout, iterator closure, concurrent calls, approval policies, other guards, and confined plugin removal.
 
-- Separate provider, model, and reasoning settings.
-- Main provider and model changes.
-- Valid and invalid review decisions.
-- Duplicate JSON members and unexpected fields.
-- Instruction, checkpoint, constraint, and fact roles.
-- Missing or mismatched logged actions and tool schemas.
-- Stream completion, truncation, and data after completion.
-- Review failure without a main-model fallback.
-- Approval behavior under `ask` and `never`.
-- Call cancellation and request timeout.
-- Iterator closure after timeout and cancellation.
-- Plugin removal and confined permissions.
-- Concurrent review calls.
-- Preservation of other routes during model setup.
+Four tests use the real DSH `ToolRuntime` and `LlmRuntime` with controlled session, preset, approval, and adapter fixtures. Additional tests use a real DSH Session, replay its events, check PTC inner-action evidence, and test the actual tool callback signature.
 
-Four tests use the actual DSH `ToolRuntime` and `LlmRuntime`. The test tool body runs after a valid allow. It does not run after malformed output, adapter failure, or a separate tool-guard denial. These tests use controlled session, preset, and approval fixtures.
+A regression test confirms that deferred setup runs outside the installation transaction.
 
 The review policy matches the retained upstream source exactly.
 
 ## Independent code review
 
-A read-only review found one cleanup defect. The first implementation did not request stream closure after a timeout. The current implementation owns the iterator, requests closure, and waits for bounded cleanup. Two tests check closure.
+A read-only review found one iterator cleanup defect in the first implementation. The current code requests closure and waits for bounded cleanup. Two tests check closure.
 
-The review found no other concrete blocking source defect in that snapshot.
+That review found no other concrete blocking source defect in its snapshot.
 
-## Live test
+## Live adapter test
 
-The live test uses the official DSH pi-ai adapter and the saved credential reference. It sends three synthetic review requests. It does not send actual session history. It does not execute tool bodies. It does not change profile settings.
+The official DSH pi-ai adapter sent three synthetic review requests. Both synthetic read actions produced `low / allow`. The fictional credential-send action produced `high / deny`.
+
+All requests used `gptpro / codex-auto-review / medium`. No tool body ran. No actual conversation history was sent. The test prepared metadata in memory.
 
 Run only with explicit permission:
 
@@ -43,27 +38,44 @@ Run only with explicit permission:
 DSH_ALLOW_LIVE_REVIEW=1 npm run test:live
 ```
 
-The live test passed. Both synthetic main routes produced `low / allow`. The fictional credential-send action produced `high / deny`. All three requests used `gptpro / codex-auto-review / medium`. No tool body ran.
+## Installed gate test
 
-The model metadata was prepared in memory. This result does not prove that the plugin is installed or that the saved profile model entry is valid.
+A temporary Host bundle tested the installed gate through the live SessionStore, permission service, ToolRuntime, and model adapter. It used synthetic isolated scope carriers. It did not start a main-agent loop.
 
-## Installation
+| Test | Review request | Tool body |
+| --- | --- | --- |
+| Main route `gptpro / gpt-6.1-sol` | Independent route | Ran once |
+| Main route `deepseek-official / deepseek-flash` | Independent route | Ran once |
+| Separate tool guard denies | Independent route | Did not run |
+| Logged action differs from arguments | None | Did not run |
 
-The first setup installation failed because `pnpm` was absent. Corepack enabled the command.
+The three model requests used the saved independent route and `medium` effort. The scoped test tools were not visible globally. Existing session permissions stayed unchanged. All temporary sessions were removed.
 
-The next installation failed because the profile references a missing local VS Code Git Rollback package. The missing dependency blocks the complete profile dependency tree. No setup or reviewer bundle was installed by these attempts.
+The first probe had an incorrect callback signature. The helper was corrected. A real ToolRuntime test now checks that signature.
 
-Do not remove that package or change the profile manifest by hand. Repair it through a supported management path with the user's approval.
+Both temporary bundles were removed through the plugin manager after verification.
+
+## Installation repairs
+
+- Corepack supplied the missing `pnpm` command.
+- The missing VS Code Git Rollback source was restored from its existing profile cache. The copied files match the cache. The component remains disabled. Its peer constraints were not changed.
+- A timer retained the installation's HMR transaction. Setup now starts from the post-transaction `plugin-manager/changed` event.
+- The linked review package could not resolve shipped APIs. `npm run link:runtime` creates project-local links to the exact tested packages. It does not install another runtime or overwrite existing dependencies.
+- No install scripts were approved or run. No version exemptions were granted.
+- Profile package and patch changes used the plugin manager. The review-model metadata update used the public ConfigEditor service.
+
+The dependency manager also moved two manually copied VS Code client packages to its ignored cache. Their rows became inactive or missing. The user approved a recovery. Both packages were copied to stable workspace directories and installed through the plugin manager. The runtime files match their cached sources. The bridge gained an empty bundle patch only. The original clipboard patch was retained. Both rows are restored.
+
+Two existing optional-module import warnings remain: `otel` and `ui-settings-session-log`. This project did not change those components.
 
 ## Limits
 
-- Full browser interaction is not available.
-- The live GUI's Auto selection has not been exercised.
-- Full PTC inner execution has not been tested.
-- Real session replay passed. Real permission-service removal has not been tested.
-- PTC action evidence passed. Full PTC transport and inner tool execution have not been tested.
-- The local context and output declarations are not measured gateway limits.
-- A defective adapter that ignores abort can outlive the one-second cleanup wait. It cannot grant the pending tool call.
-- Model review is probabilistic. A successful test is not a security guarantee.
+- Browser control is not available. The GUI's permission-menu interaction was not tested.
+- The installed test used synthetic carriers, not a driven main-agent loop.
+- Full PTC transport and inner tool execution were not tested. PTC evidence validation passed.
+- Plugin removal with the real live permission service was not exercised. Controlled lifecycle tests passed.
+- Context and output declarations are local settings, not measured gateway capacities.
+- A defective adapter that ignores abort can outlive the one-second cleanup wait. It cannot grant the pending call.
+- Model review is probabilistic. These results are not a security guarantee.
 
 The GPT Pro gateway uses HTTP. Review data has no TLS protection on that connection.

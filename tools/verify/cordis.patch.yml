@@ -1,0 +1,3 @@
+- insert:
+    - id: independent-review-verification
+      name: './run-v2.js'

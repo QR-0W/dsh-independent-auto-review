@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { prepareModelConfig } from '../tools/preflight/configure.js';
+import { deferUntilManagerChange } from '../tools/preflight/defer.js';
+import { AsyncLocalStorage } from 'node:async_hooks';
 
 const sample = () => ({ providers: {
   anyrouter: { apiKeyEnv: 'OTHER_REF', models: [{ id: 'main-model', contextWindow: 400000 }] },
@@ -30,4 +32,25 @@ test('Setup rejects an absent or ambiguous review model', () => {
   assert.throws(() => prepareModelConfig({}));
   const current = sample(); current.providers.gptpro.models.push({ id: 'codex-auto-review' });
   assert.throws(() => prepareModelConfig(current), /one configured entry/);
+});
+
+test('Deferred setup runs once outside the install transaction', async () => {
+  const transaction = new AsyncLocalStorage();
+  const disposers = [];
+  let listener;
+  let calls = 0;
+  const ctx = {
+    on(name, callback) { assert.equal(name, 'plugin-manager/changed'); listener = callback; return () => { listener = undefined; }; },
+    effect(factory) { for (const dispose of factory()) disposers.push(dispose); },
+    logger: { error(error) { throw error; } },
+  };
+  transaction.run({ active: true }, () => deferUntilManagerChange(ctx, () => {
+    assert.equal(transaction.getStore(), undefined); calls++;
+  }));
+  assert.equal(calls, 0);
+  listener(); listener();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(calls, 1);
+  for (const dispose of disposers.reverse()) await dispose();
+  assert.equal(listener, undefined);
 });

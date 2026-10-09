@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Prepare the review model through the DSH configuration service. Check live Auto sessions.",
   "exports": {".": "./index.js"},
-  "files": ["index.js", "configure.js", "cordis.patch.yml"],
+  "files": ["index.js", "after-change.js", "defer.js", "configure.js", "cordis.patch.yml"],
   "peerDependencies": {
     "@deepseek-ai/dsh-config-editor": "0.2.0-rc.2",
     "@deepseek-ai/dsh-llm": "0.2.0-rc.2",

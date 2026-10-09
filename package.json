@@ -1,6 +1,6 @@
 {
   "name": "@local/dsh-independent-auto-review",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Use a separate model for DSH Auto Review. Keep the main model unchanged.",
   "type": "module",
@@ -22,7 +22,9 @@
     "@deepseek-ai/dsh-tools": "0.2.0-rc.2",
     "@deepseek-ai/dsh-util-values": "0.2.0-rc.2"
   },
+  "devDependencies": {"@deepseek-ai/dsh-scope": "0.2.0-rc.2"},
   "scripts": {
+    "link:runtime": "node ./tools/link-runtime.mjs",
     "test": "node --import ./test/register-host.mjs --test test/*.test.mjs",
     "check": "node --check src/auto-review.js && node --check src/reviewer.js && npm test",
     "test:live": "node --import ./test/register-host.mjs test/live-review.mjs"
