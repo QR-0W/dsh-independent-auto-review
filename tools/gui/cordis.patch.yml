@@ -1,0 +1,3 @@
+- insert:
+    - id: independent-auto-review-settings
+      name: '@local/dsh-independent-auto-review-settings'

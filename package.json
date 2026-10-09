@@ -1,16 +1,20 @@
 {
   "name": "@local/dsh-independent-auto-review",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "Use a separate model for DSH Auto Review. Keep the main model unchanged.",
   "type": "module",
   "license": "MIT",
+  "repository": {"type": "git", "url": "git+https://github.com/QR-0W/dsh-independent-auto-review.git"},
+  "homepage": "https://github.com/QR-0W/dsh-independent-auto-review#readme",
+  "bugs": {"url": "https://github.com/QR-0W/dsh-independent-auto-review/issues"},
   "main": "./src/auto-review.js",
   "exports": {
     ".": "./src/auto-review.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json"
   },
-  "files": ["src", "cordis.patch.yml", "LICENSE", "NOTICE.md", "README.md"],
+  "files": ["src", "locale", "cordis.patch.yml", "LICENSE", "NOTICE.md", "README.md"],
   "engines": {"node": ">=24"},
   "peerDependencies": {
     "@deepseek-ai/cordis": "~4.0.4",
@@ -22,11 +26,25 @@
     "@deepseek-ai/dsh-tools": "0.2.0-rc.2",
     "@deepseek-ai/dsh-util-values": "0.2.0-rc.2"
   },
-  "devDependencies": {"@deepseek-ai/dsh-scope": "0.2.0-rc.2"},
+  "devDependencies": {
+    "@deepseek-ai/cordis": "~4.0.4",
+    "@deepseek-ai/schemastery": "~3.18.4",
+    "@deepseek-ai/dsh-user-approval": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-llm": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-permission-presets": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-session": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-tools": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-util-values": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-scope": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-typert-protocol": "0.2.0-rc.2",
+    "zod": "4.6.5"
+  },
   "scripts": {
     "link:runtime": "node ./tools/link-runtime.mjs",
     "test": "node --import ./test/register-host.mjs --test test/*.test.mjs",
-    "check": "node --check src/auto-review.js && node --check src/reviewer.js && npm test",
+    "build:gui": "node tools/gui/build.mjs",
+    "check:gui": "node --check tools/gui/host.js && node --check tools/gui/rpc.js && node --check tools/gui/service.js && node --check tools/gui/client.js",
+    "check": "node --check src/auto-review.js && node --check src/reviewer.js && npm run check:gui && npm test",
     "test:live": "node --import ./test/register-host.mjs test/live-review.mjs"
   },
   "dsh": {"bundle": {"patch": "./cordis.patch.yml"}}

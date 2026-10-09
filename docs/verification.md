@@ -10,7 +10,7 @@ The active review route is `gptpro / codex-auto-review / medium`. The timeout is
 
 Run `npm run check` with DSH `0.2.0-rc.2` and Node 24.
 
-Current result: 57 tests passed. No tests failed.
+Gate-release snapshot: 57 tests passed. No tests failed. The later GUI release runs these unchanged safety tests plus 39 GUI tests; see [GUI verification](gui-verification.md).
 
 The tests cover separate route settings, main-route changes, strict decisions, evidence roles, logged action matching, stream completion, cancellation, timeout, iterator closure, concurrent calls, approval policies, other guards, and confined plugin removal.
 

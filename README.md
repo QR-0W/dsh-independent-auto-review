@@ -2,11 +2,36 @@
 
 Use a separate model to review DSH tool calls. Keep the main model unchanged.
 
-This Host plugin supports DSH `0.2.0-rc.2`. It replaces the built-in experimental Auto Review component. It does not replace the main agent or the model adapter.
+This project targets DSH `0.2.0-rc.2` and Node 24. It replaces the built-in experimental Auto Review component. It does not replace the main agent or the model adapter. Other DSH versions are not verified.
 
-## Review configuration
+## Repository and distribution
 
-The bundle uses this configuration:
+Public source repository: [QR-0W/dsh-independent-auto-review](https://github.com/QR-0W/dsh-independent-auto-review).
+
+Release `v0.1.2` includes the root package `0.1.2` and settings companion `0.1.0`. Use this tag or a reviewed later commit for the GUI workflow. The older tags `v0.1.0` and `v0.1.1` do not contain the companion.
+
+Use a source checkout for the complete installation workflow. The root runtime package does not contain or activate the GUI companion. The GUI ships a prebuilt browser artifact. No install-time build script is needed.
+
+The project contains two persistent bundles:
+
+- Root directory: the independent review gate.
+- [tools/gui](tools/gui/README.md): `@local/dsh-independent-auto-review-settings`, the configuration form and matching management tool.
+
+## Installation
+
+1. Clone the repository. Use a reviewed release tag or commit instead of an unpinned development branch.
+2. Register a DSH model adapter for the review provider. The adapter must resolve the selected model. An explicit reasoning level must be supported by that model.
+3. Run `npm run link:runtime` in the source checkout. This creates project-local links to the exact API packages shipped with the tested DSH runtime. It does not install a second runtime or overwrite existing dependencies.
+4. Before replacing the built-in Auto component, move existing Auto sessions to a manual permission mode. Built-in disposal can otherwise change their permissions.
+5. Install the source checkout's absolute directory through the DSH Plugin Manager.
+6. Install the absolute `tools/gui` directory through the same manager.
+7. Confirm the installation outcomes. Refresh the existing GUI when needed to load the new client artifact.
+8. Open **Plugins → Installed → Independent Auto Review**. Select **Configure** on its review component row.
+9. Save the review provider, model, reasoning effort, and timeout. Select **Auto** in the permission menu when ready.
+
+Do not hand-edit the profile's package manifest or patch. Package and profile changes use the plugin manager. Configuration writes use the public Host configuration service.
+
+The checked-in default is environment-specific:
 
 ```yaml
 reviewer:
@@ -16,73 +41,60 @@ reviewer:
   timeoutMs: 60000
 ```
 
-Change the plugin configuration through the DSH configuration editor. You can change the provider, model, reasoning level, and timeout.
+It is not a bundled model service. Public users must supply a valid registered route. The local `tools/preflight` helper fills missing metadata for this specific route only. It declares local limits of 128000 context tokens and 8192 output tokens, not measured gateway capacities. It preserves other models, provider settings, and credential references. It does not read or store API keys.
 
-A configuration change reloads this plugin. Sessions that used Auto can move to confined `workspace-write`. Select Auto again after the new configuration is active. A main-model selection change does not reload this plugin.
+## Configure the reviewer
 
-The selected provider must have a registered DSH adapter. The adapter must resolve the selected model. An explicit reasoning level must be supported by that model.
+The GUI edits the independent reviewer, not the main model. Only an explicit save writes. The form retains its draft after a failure and uses a revision fence to prevent overwriting concurrent changes.
 
-If you omit `reasoningEffort`, the review adapter uses its own default. The plugin never copies the main model's settings. It never falls back to the main model.
+The core reviewer is not a volatile settings consumer. Saving through the shared ConfigEditor operation uses its normal configuration lifecycle. It reloads the reviewer and can move Auto sessions to confined `workspace-write`. Select Auto again after the new configuration is active. Changing the main-model selection does not reload the reviewer. Saving does not test the gateway or select Auto.
+
+Provider and model identifiers are exact. The GUI does not prove gateway connectivity or backend model identity. An unsupported route or explicit reasoning level stops review; no main-model fallback exists.
+
+An empty GUI reasoning field inherits the bundle's default. If `reasoningEffort` is absent from all configuration layers, the review adapter uses its own default. Timeout must be an integer from 1 to 300000 milliseconds.
+
+The deferred `auto_review_settings` management tool reads and saves through the same Host operation. Use `get` first, then supply that revision as `expectedRevision` with `set`. A stale revision rejects the write. The tool cannot select Auto or approve a pending tool call.
 
 ## Safety
 
-- The plugin reviews native tool calls and PTC inner calls.
-- It does not review the outer `run_code` transport.
-- It retains the upstream review policy and evidence roles.
-- A review failure denies the call. It does not start the tool body.
-- The output must have a valid decision and a terminal `stop`.
-- A later permission plugin or tool guard can still deny the call.
-- A review denial can request manual approval under the `ask` policy. This is the upstream behavior.
-- Under the `never` policy, a review denial is final.
-- Cancellation cannot grant the pending call.
-- Plugin removal cancels active reviews. It selects confined `workspace-write` permissions for Auto sessions. It preserves an existing `never` policy.
+- Review native tool calls and PTC inner calls, not the outer `run_code` transport.
+- Retain the upstream policy and evidence roles.
+- Require a valid decision and a terminal `stop`.
+- Deny on review failure. Do not start the tool body.
+- Preserve later permission denials and tool guards.
+- Under `ask`, a review denial can request manual approval. Under `never`, the denial is final.
+- Cancellation cannot grant a pending call.
+- Removal cancels active reviews and selects confined `workspace-write` for Auto sessions. Preserve an existing `never` policy.
 
-The adapter must honor the abort signal. The plugin requests iterator closure and waits up to one second for cleanup. A defective adapter can keep a network request active after that limit. The tool call remains denied or cancelled.
+The adapter must honor abort. Iterator cleanup waits at most one second. A defective adapter can retain network activity after that wait, but cannot grant the pending call.
 
-A model decision is not a deterministic security boundary. Do not use it as the only control for sensitive systems.
+Model review is probabilistic. Do not use it as the only control for sensitive systems.
 
-**WARNING:** The configured GPT Pro gateway uses HTTP. Review evidence can contain private project data. HTTP does not protect that data in transit.
+**Warning:** The locally configured GPT Pro gateway uses HTTP. Review evidence can contain private project data. That connection has no TLS protection.
 
-## Installation
+## Remove or roll back
 
-Use the DSH plugin manager. Do not edit the DSH installation or the profile's package manifest.
+Remove the GUI companion through Plugin Manager to remove the form and management tool. This does not remove the reviewer or its saved configuration.
 
-1. Run `npm run link:runtime`, then `npm run check` in the project. The link command uses the exact tested API packages shipped with DSH. It does not install another runtime.
-2. Install the temporary setup bundle in `tools/preflight` through `plugin_manager`.
-3. Read `reports/local-preflight.json`. Confirm `status` is `ready` and `autoSessions` is `0`.
-4. If Auto sessions exist, move them to a manual permission mode. Do not replace the old component while they use Auto.
-5. Install this project's absolute directory through `plugin_manager`.
-6. Check the installation result and the live Config entry.
-7. For a controlled live check, install `tools/verify` through the plugin manager. Read `reports/local-installed.json`. The probe uses isolated scopes. It does not change existing session permissions.
-8. Remove both temporary bundles through the plugin manager.
-9. Select Auto in the permission menu when you are ready to use model review.
+Disable or remove the whole root bundle to roll back the reviewer. Do not disable only its review row: the root bundle would still disable the built-in row. Confirm the live component state before selecting Auto again.
 
-The current `web` profile has completed these installation and verification steps. No temporary bundle remains.
+Review-model metadata added during setup remains after removal. It does not affect the main model.
 
-Installation does not select Auto for your sessions. It does not change the main model.
+## Development and verification
 
-The temporary setup bundle uses the public DSH `configEditor` service. It fills missing metadata only on `gptpro / codex-auto-review`. It declares a local context limit of 128000 and an output limit of 8192. These declarations are not measured gateway limits. It also declares the previously tested wire levels: `low`, `medium`, `high`, and `xhigh`. It preserves other models, provider settings, and credential references. It does not read or store API keys.
-
-## Removal
-
-Use the plugin manager to disable or remove this bundle. Its patch will no longer disable the built-in component. Confirm the live component state before you select Auto again.
-
-Do not disable only the new plugin row while this bundle remains enabled. The bundle would still disable the built-in row. Remove or disable the whole bundle for rollback.
-
-Model metadata added by setup remains in the profile after removal. It does not affect the main model. Use the configuration editor if you also want to remove that metadata.
-
-## Development
-
-The project is a local Git repository. It has no remote repository. Git uses a project-local development identity. It does not change your global Git identity.
-
-Run:
+End users do not need a compiler. For development, rebuild the GUI after editing its source:
 
 ```sh
+npm run link:runtime
+npm ci --ignore-scripts --prefix tools/gui/build-tools
+npm run build:gui
 npm run check
 ```
 
-Tests use the installed DSH runtime. Set `DSH_RUNTIME_DIR` if DSH is not in the global npm directory. Tests require version `0.2.0-rc.2`. No test installs another runtime.
+Tests use the installed runtime. Set `DSH_RUNTIME_DIR` when DSH is not in the global npm directory. Shared APIs are declared in peer and development dependencies. The linking helper supplies the exact shipped APIs; it does not install another runtime. The compiler dependencies stay in the separate build-tools directory.
 
-See `NOTICE.md` for the source license and `docs/verification.md` for test results and limits.
+The current suite passed 96 tests, including 16 real Registry, Gateway, and ToolRuntime RPC tests. The live Host settings read and a same-values save passed. Client slot registration is active. Browser appearance and clicks remain unverified. Saving settings is not a real-gateway test. See [GUI verification](docs/gui-verification.md) for this snapshot and limits, and [earlier gate verification](docs/verification.md) for the prior review-gate checks.
+
+See the [source notice](NOTICE.md) and the GUI's [third-party notices](tools/gui/THIRD-PARTY-NOTICES.md). Private local reports, dependencies, environment files, and logs are excluded from Git. Ignore rules do not remove files already committed.
 
 Project reports use short, direct English. They are not certified for full ASD-STE100 compliance. The upstream policy and license remain unchanged.
